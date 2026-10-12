@@ -1,0 +1,1039 @@
+{
+  "patches": [
+    {
+      "args": [
+        "\n<!-- keep -->\r\n<ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro>\n<p>Same</p>\n",
+        "append",
+        "<h2>New</h2><p>\u4e2d\u6587</p>"
+      ],
+      "result": "\n<!-- keep -->\r\n<ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro>\n<p>Same</p>\n<h2>New</h2><p>\u4e2d\u6587</p>"
+    },
+    {
+      "args": [
+        "\n<!-- keep -->\r\n<ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro>\n<p>Same</p>\n",
+        "replace",
+        "<p>Changed</p>",
+        "<p>Same</p>"
+      ],
+      "result": "\n<!-- keep -->\r\n<ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro>\n<p>Changed</p>\n"
+    },
+    {
+      "args": [
+        "<ac:structured-macro ac:name=\"code\"><ac:plain-text-body><![CDATA[<p>Same</p>\nx < y]]></ac:plain-text-body></ac:structured-macro><p>Same</p>",
+        "replace",
+        "<p>Changed</p>",
+        "<p>Same</p>"
+      ],
+      "result": "<ac:structured-macro ac:name=\"code\"><ac:plain-text-body><![CDATA[<p>Same</p>\nx < y]]></ac:plain-text-body></ac:structured-macro><p>Changed</p>"
+    },
+    {
+      "args": [
+        "",
+        "append",
+        "<p/><hr /><p>A<br>B<img src=\"/safe.png\"/></p>"
+      ],
+      "result": "<p/><hr /><p>A<br>B<img src=\"/safe.png\"/></p>"
+    },
+    {
+      "args": [
+        "<div title=\"<p>Old</p>\" data-example=\"a > b\">Untouched</div><!-- <p>Old</p> --><p>Old</p><pre>Tail &amp; text</pre>",
+        "replace",
+        "<p>New</p>",
+        "<p>Old</p>"
+      ],
+      "result": "<div title=\"<p>Old</p>\" data-example=\"a > b\">Untouched</div><!-- <p>Old</p> --><p>New</p><pre>Tail &amp; text</pre>"
+    },
+    {
+      "args": [
+        "<div title=\"<p>Old</p>\">Only attribute</div>",
+        "replace",
+        "<p>New</p>",
+        "<p>Old</p>"
+      ],
+      "code": "TARGET_AMBIGUOUS"
+    },
+    {
+      "args": [
+        "<table><tr><td><p>Old</p></td></tr></table>",
+        "replace",
+        "<p>New</p>",
+        "<p>Old</p>"
+      ],
+      "code": "TARGET_AMBIGUOUS"
+    },
+    {
+      "args": [
+        "<ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro>",
+        "replace",
+        "<p>New</p>",
+        "<p>Same</p>"
+      ],
+      "code": "TARGET_AMBIGUOUS"
+    },
+    {
+      "args": [
+        "<p>Old</p><p>Old</p>",
+        "replace",
+        "<p>New</p>",
+        "<p>Old</p>"
+      ],
+      "code": "TARGET_AMBIGUOUS"
+    },
+    {
+      "args": [
+        "<p>Other</p>",
+        "replace",
+        "<p>New</p>",
+        "<p>Old</p>"
+      ],
+      "code": "TARGET_AMBIGUOUS"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p>New</p>",
+        "Old"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p>New</p>",
+        "<p>Old"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p><p>Other</p>",
+        "replace",
+        "<p>New</p>",
+        "<p>Old</p><p>Other</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p>New</p>",
+        " <p>Old</p> "
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro>",
+        "replace",
+        "<p>New</p>",
+        "<ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<div><ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro></div>",
+        "replace",
+        "<p>New</p>",
+        "<div><ac:structured-macro ac:name=\"include\" ac:macro-id=\"keep-id\"><ac:parameter ac:name=\"\"><ri:page ri:content-title=\"Keep\"/></ac:parameter><ac:rich-text-body><p>Same</p></ac:rich-text-body></ac:structured-macro></div>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>\u9996\u884c</p>\r\u6587\u5b57\n<p>Target</p>\u2028\u5c3e\u90e8",
+        "replace",
+        "<p>\u65b0\u76ee\u6807</p>",
+        "<p>Target</p>"
+      ],
+      "result": "<p>\u9996\u884c</p>\r\u6587\u5b57\n<p>\u65b0\u76ee\u6807</p>\u2028\u5c3e\u90e8"
+    },
+    {
+      "args": [
+        "<P data-note=\"a > b\">&copy;\u4e2d\u6587</P>",
+        "replace",
+        "<p>Next</p>",
+        "<P data-note=\"a > b\">&copy;\u4e2d\u6587</P>"
+      ],
+      "result": "<p>Next</p>"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<script>x</script>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<script>x</script>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p><style>x</style></p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p><style>x</style></p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<iframe/>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<iframe/>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p><ac:structured-macro ac:name=\"include\"/></p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p><ac:structured-macro ac:name=\"include\"/></p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p><ri:page/></p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p><ri:page/></p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p>Unclosed",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p>Unclosed",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p>A</div>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p>A</div>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<svg><script>x</script></svg>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<svg><script>x</script></svg>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p onclick=\"example()\">A</p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p onclick=\"example()\">A</p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p><a href=\"javascript:example()\">A</a></p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p><a href=\"javascript:example()\">A</a></p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p><a href=\"java&#x0a;script:example()\">A</a></p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p><a href=\"java&#x0a;script:example()\">A</a></p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p><img src=\"data:text/html,active\"/></p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p><img src=\"data:text/html,active\"/></p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p style=\"background:url(https://example.com)\">A</p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p style=\"background:url(https://example.com)\">A</p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p style=\"width:expression(example())\">A</p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p style=\"width:expression(example())\">A</p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p>A</p>outside",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p>A</p>outside",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<!-- comments only -->",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<!-- comments only -->",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<!DOCTYPE html><p>A</p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<!DOCTYPE html><p>A</p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p>A</p attribute>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p>A</p attribute>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "append",
+        "<p><![CDATA[unparsed]]></p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Old</p>",
+        "replace",
+        "<p><![CDATA[unparsed]]></p>",
+        "<p>Old</p>"
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>Broken",
+        "append",
+        "<p>New</p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<p>A</div>",
+        "append",
+        "<p>New</p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        "<div title=\"unterminated",
+        "append",
+        "<p>New</p>",
+        null
+      ],
+      "code": "NOT_SUPPORTED"
+    },
+    {
+      "args": [
+        null,
+        "append",
+        "<p>A</p>",
+        null
+      ],
+      "code": "INVALID_ARGUMENT"
+    },
+    {
+      "args": [
+        "",
+        "delete",
+        "<p>A</p>",
+        null
+      ],
+      "code": "INVALID_ARGUMENT"
+    },
+    {
+      "args": [
+        "",
+        "append",
+        null,
+        null
+      ],
+      "code": "INVALID_ARGUMENT"
+    },
+    {
+      "args": [
+        "",
+        "append",
+        " ",
+        null
+      ],
+      "code": "INVALID_ARGUMENT"
+    },
+    {
+      "args": [
+        "",
+        "append",
+        "<p>A</p>",
+        "<p>Unused</p>"
+      ],
+      "code": "INVALID_ARGUMENT"
+    },
+    {
+      "args": [
+        "<p>A</p>",
+        "replace",
+        "<p>B</p>",
+        null
+      ],
+      "code": "INVALID_ARGUMENT"
+    },
+    {
+      "args": [
+        "<p>A</p>",
+        "replace",
+        "<p>B</p>",
+        ""
+      ],
+      "code": "INVALID_ARGUMENT"
+    },
+    {
+      "args": [
+        "",
+        "append",
+        "<p>\ud800</p>",
+        null
+      ],
+      "code": "INVALID_ARGUMENT"
+    }
+  ],
+  "hashes": [
+    {
+      "base": "https://example.com/confluence",
+      "method": "POST",
+      "path": "content",
+      "payload": {
+        "type": "page",
+        "status": "current",
+        "title": "\u4e2d\u6587 \ud83d\ude00",
+        "space": {
+          "key": "DOC"
+        },
+        "ancestors": [
+          {
+            "id": "123"
+          }
+        ],
+        "body": {
+          "storage": {
+            "value": "<p>\u6b63\u6587 \ud83d\ude00</p>",
+            "representation": "storage"
+          }
+        }
+      },
+      "hash": "f7ae8c58e900befa441f949313d7e24ce930dd63a7f80f48a7c67f7ae762896b"
+    },
+    {
+      "base": "https://example.com/confluence",
+      "method": "POST",
+      "path": "content",
+      "payload": {
+        "\ud83d\ude00": "emoji-key",
+        "\ue000": "private-use",
+        "a": "slash / quote \" backslash \\ \u2028\n\t"
+      },
+      "hash": "28ee9b8fe8ec30bd523fb8b775296b690b349469528e86d70ae570683341c2c0"
+    },
+    {
+      "base": "https://example.com/confluence",
+      "method": "POST",
+      "path": "content",
+      "payload": {
+        "value": [
+          null,
+          true,
+          0,
+          1.5,
+          "\u00e9",
+          1e-06
+        ]
+      },
+      "hash": "37de7c7e8bf836537e1bb3239d88428f2444845a798e0d68c2372ff532769a6d"
+    }
+  ],
+  "previews": [
+    {
+      "name": "create_page",
+      "args": {
+        "space_key": "DOC",
+        "title": "\u4e2d\u6587 \ud83d\ude00",
+        "body_storage": "<p>\u6b63\u6587 \ud83d\ude00</p>"
+      },
+      "page": {
+        "id": "123",
+        "type": "page",
+        "status": "current",
+        "title": "Before",
+        "space": {
+          "key": "DOC"
+        },
+        "version": {
+          "number": 7
+        },
+        "body": {
+          "storage": {
+            "value": "<p>Before</p>"
+          }
+        }
+      },
+      "result": {
+        "dry_run": true,
+        "executed": false,
+        "message": "\u4ec5\u9884\u89c8\uff0c\u5c1a\u672a\u6267\u884c\u521b\u5efa\u3002",
+        "target": {
+          "base_url": "https://example.com/confluence",
+          "space_key": "DOC",
+          "parent_id": null
+        },
+        "method": "POST",
+        "url": "https://example.com/confluence/rest/api/content",
+        "payload": {
+          "type": "page",
+          "status": "current",
+          "title": "\u4e2d\u6587 \ud83d\ude00",
+          "space": {
+            "key": "DOC"
+          },
+          "body": {
+            "storage": {
+              "value": "<p>\u6b63\u6587 \ud83d\ude00</p>",
+              "representation": "storage"
+            }
+          }
+        },
+        "preview_hash": "f119520196d696bb4153e3ec1fe3eea352816393a2c3c62d57e7ff403becfd38"
+      }
+    },
+    {
+      "name": "create_page",
+      "args": {
+        "space_key": "DOC",
+        "title": "After",
+        "body_storage": "<p>After</p>",
+        "parent_id": "123"
+      },
+      "page": {
+        "id": "123",
+        "type": "page",
+        "status": "current",
+        "title": "Before",
+        "space": {
+          "key": "DOC"
+        },
+        "version": {
+          "number": 7
+        },
+        "body": {
+          "storage": {
+            "value": "<p>Before</p>"
+          }
+        }
+      },
+      "result": {
+        "dry_run": true,
+        "executed": false,
+        "message": "\u4ec5\u9884\u89c8\uff0c\u5c1a\u672a\u6267\u884c\u521b\u5efa\u3002",
+        "target": {
+          "base_url": "https://example.com/confluence",
+          "space_key": "DOC",
+          "parent_id": "123",
+          "parent_title": "Before"
+        },
+        "method": "POST",
+        "url": "https://example.com/confluence/rest/api/content",
+        "payload": {
+          "type": "page",
+          "status": "current",
+          "title": "After",
+          "space": {
+            "key": "DOC"
+          },
+          "body": {
+            "storage": {
+              "value": "<p>After</p>",
+              "representation": "storage"
+            }
+          },
+          "ancestors": [
+            {
+              "id": "123"
+            }
+          ]
+        },
+        "preview_hash": "16fdb9668f6436313e0415b846c47f052123bbd0db54db6fd499694e36dc4e60"
+      }
+    },
+    {
+      "name": "update_page",
+      "args": {
+        "pageId": "123",
+        "title": "After",
+        "body_storage": "<p>After</p>",
+        "expected_version": 7
+      },
+      "page": {
+        "id": "123",
+        "type": "page",
+        "status": "current",
+        "title": "Before",
+        "space": {
+          "key": "DOC"
+        },
+        "version": {
+          "number": 7
+        },
+        "body": {
+          "storage": {
+            "value": "<p>Before</p>"
+          }
+        }
+      },
+      "result": {
+        "dry_run": true,
+        "executed": false,
+        "message": "\u4ec5\u9884\u89c8\uff0c\u5c1a\u672a\u6267\u884c\u66f4\u65b0\u3002",
+        "target": {
+          "base_url": "https://example.com/confluence",
+          "pageId": "123",
+          "space_key": "DOC"
+        },
+        "before": {
+          "title": "Before",
+          "body_storage": "<p>Before</p>"
+        },
+        "after": {
+          "title": "After",
+          "body_storage": "<p>After</p>"
+        },
+        "current_version": 7,
+        "proposed_version": 8,
+        "method": "PUT",
+        "url": "https://example.com/confluence/rest/api/content/123",
+        "payload": {
+          "id": "123",
+          "type": "page",
+          "status": "current",
+          "title": "After",
+          "body": {
+            "storage": {
+              "value": "<p>After</p>",
+              "representation": "storage"
+            }
+          },
+          "version": {
+            "number": 8
+          }
+        },
+        "preview_hash": "e0cbeef6f46f8020328a695b593107efcbb852ba82a745f8e2f2a9bff1fccb4e"
+      }
+    },
+    {
+      "name": "patch_page",
+      "args": {
+        "pageId": "123",
+        "operation": "append",
+        "body_storage": "<h2>New</h2><p>\u4e2d\u6587</p>",
+        "expected_version": 7
+      },
+      "page": {
+        "id": "123",
+        "type": "page",
+        "status": "current",
+        "title": "Before",
+        "space": {
+          "key": "DOC"
+        },
+        "version": {
+          "number": 7
+        },
+        "body": {
+          "storage": {
+            "value": "<p>Before</p>"
+          }
+        }
+      },
+      "result": {
+        "dry_run": true,
+        "executed": false,
+        "message": "\u4ec5\u9884\u89c8\uff0c\u5c1a\u672a\u6267\u884c\u66f4\u65b0\u3002",
+        "target": {
+          "base_url": "https://example.com/confluence",
+          "pageId": "123",
+          "space_key": "DOC"
+        },
+        "before": {
+          "title": "Before",
+          "body_storage": "<p>Before</p>"
+        },
+        "after": {
+          "title": "Before",
+          "body_storage": "<p>Before</p><h2>New</h2><p>\u4e2d\u6587</p>"
+        },
+        "current_version": 7,
+        "proposed_version": 8,
+        "method": "PUT",
+        "url": "https://example.com/confluence/rest/api/content/123",
+        "payload": {
+          "id": "123",
+          "type": "page",
+          "status": "current",
+          "title": "Before",
+          "body": {
+            "storage": {
+              "value": "<p>Before</p><h2>New</h2><p>\u4e2d\u6587</p>",
+              "representation": "storage"
+            }
+          },
+          "version": {
+            "number": 8
+          }
+        },
+        "preview_hash": "545cc4d9e9e4867d2792ba673dafe2204e494857420503151ad1ddc6a5c83ebc",
+        "operation": "append",
+        "diff": "--- before-storage\n+++ after-storage\n@@ -1 +1 @@\n-<p>Before</p>+<p>Before</p><h2>New</h2><p>\u4e2d\u6587</p>",
+        "diff_truncated": false
+      }
+    },
+    {
+      "name": "patch_page",
+      "args": {
+        "pageId": "123",
+        "operation": "replace",
+        "body_storage": "<p>After</p>",
+        "old_fragment": "<p>Before</p>",
+        "expected_version": 7
+      },
+      "page": {
+        "id": "123",
+        "type": "page",
+        "status": "current",
+        "title": "Before",
+        "space": {
+          "key": "DOC"
+        },
+        "version": {
+          "number": 7
+        },
+        "body": {
+          "storage": {
+            "value": "<p>Before</p>"
+          }
+        }
+      },
+      "result": {
+        "dry_run": true,
+        "executed": false,
+        "message": "\u4ec5\u9884\u89c8\uff0c\u5c1a\u672a\u6267\u884c\u66f4\u65b0\u3002",
+        "target": {
+          "base_url": "https://example.com/confluence",
+          "pageId": "123",
+          "space_key": "DOC"
+        },
+        "before": {
+          "title": "Before",
+          "body_storage": "<p>Before</p>"
+        },
+        "after": {
+          "title": "Before",
+          "body_storage": "<p>After</p>"
+        },
+        "current_version": 7,
+        "proposed_version": 8,
+        "method": "PUT",
+        "url": "https://example.com/confluence/rest/api/content/123",
+        "payload": {
+          "id": "123",
+          "type": "page",
+          "status": "current",
+          "title": "Before",
+          "body": {
+            "storage": {
+              "value": "<p>After</p>",
+              "representation": "storage"
+            }
+          },
+          "version": {
+            "number": 8
+          }
+        },
+        "preview_hash": "5a509891b1ff7e0b36f1d9d735f1a445b10b55132faa8f1df7ea85f5f9eedda1",
+        "operation": "replace",
+        "diff": "--- before-storage\n+++ after-storage\n@@ -1 +1 @@\n-<p>Before</p>+<p>After</p>",
+        "diff_truncated": false
+      }
+    },
+    {
+      "name": "patch_page",
+      "args": {
+        "pageId": "123",
+        "operation": "replace",
+        "body_storage": "<p>After</p>",
+        "old_fragment": "<p>Before</p>",
+        "expected_version": 7
+      },
+      "page": {
+        "id": "123",
+        "type": "page",
+        "status": "current",
+        "title": "Before",
+        "space": {
+          "key": "DOC"
+        },
+        "version": {
+          "number": 7
+        },
+        "body": {
+          "storage": {
+            "value": "<!-- source -->\n<p>Before</p>\r\n<ac:structured-macro ac:name=\"code\"><ac:plain-text-body><![CDATA[<p>Before</p> x < y]]></ac:plain-text-body></ac:structured-macro>"
+          }
+        }
+      },
+      "result": {
+        "dry_run": true,
+        "executed": false,
+        "message": "\u4ec5\u9884\u89c8\uff0c\u5c1a\u672a\u6267\u884c\u66f4\u65b0\u3002",
+        "target": {
+          "base_url": "https://example.com/confluence",
+          "pageId": "123",
+          "space_key": "DOC"
+        },
+        "before": {
+          "title": "Before",
+          "body_storage": "<!-- source -->\n<p>Before</p>\r\n<ac:structured-macro ac:name=\"code\"><ac:plain-text-body><![CDATA[<p>Before</p> x < y]]></ac:plain-text-body></ac:structured-macro>"
+        },
+        "after": {
+          "title": "Before",
+          "body_storage": "<!-- source -->\n<p>After</p>\r\n<ac:structured-macro ac:name=\"code\"><ac:plain-text-body><![CDATA[<p>Before</p> x < y]]></ac:plain-text-body></ac:structured-macro>"
+        },
+        "current_version": 7,
+        "proposed_version": 8,
+        "method": "PUT",
+        "url": "https://example.com/confluence/rest/api/content/123",
+        "payload": {
+          "id": "123",
+          "type": "page",
+          "status": "current",
+          "title": "Before",
+          "body": {
+            "storage": {
+              "value": "<!-- source -->\n<p>After</p>\r\n<ac:structured-macro ac:name=\"code\"><ac:plain-text-body><![CDATA[<p>Before</p> x < y]]></ac:plain-text-body></ac:structured-macro>",
+              "representation": "storage"
+            }
+          },
+          "version": {
+            "number": 8
+          }
+        },
+        "preview_hash": "7222e0c258ba4aefa280367469d2ffcbc8a9ebc30c3ba89de696050801276618",
+        "operation": "replace",
+        "diff": "--- before-storage\n+++ after-storage\n@@ -1,3 +1,3 @@\n <!-- source -->\n-<p>Before</p>\r\n+<p>After</p>\r\n <ac:structured-macro ac:name=\"code\"><ac:plain-text-body><![CDATA[<p>Before</p> x < y]]></ac:plain-text-body></ac:structured-macro>",
+        "diff_truncated": false
+      }
+    }
+  ]
+}

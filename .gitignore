@@ -1,0 +1,13 @@
+.local/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+dist/
+*.tgz
+*.zip
+.env
+.env.*
+native/
+docs/confluence-mcp-evolution/
