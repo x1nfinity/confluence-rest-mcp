@@ -1,8 +1,8 @@
 # Confluence MCP
 
-`confluence-rest-mcp@1.0.0-alpha.2` 提供基于 Node.js、HTTPS Basic Auth 和 stdio 的 12 个 Confluence MCP 工具。CLI 为 `confluence-mcp`，MCP 服务标识为 `confluence`。当前为只读有限试用，发行待执行；npm 试用标签为 `next`，发行状态见 [发行说明](docs/RELEASE.md)。
+[`confluence-rest-mcp@1.0.0-alpha.2`](https://www.npmjs.com/package/confluence-rest-mcp/v/1.0.0-alpha.2) 已公开发布，提供基于 Node.js、HTTPS Basic Auth 和 stdio 的 12 个 Confluence MCP 工具。CLI 为 `confluence-mcp`，MCP 服务标识为 `confluence`。当前为只读有限试用，已发布至 npm `next` 标签；推荐固定版本接入，发行验证及标签状态见 [发行说明](docs/RELEASE.md)。
 
-需要 Node.js `>=22.23.2 <23`。发布完成后，使用固定版本检查和登录：
+需要 Node.js `>=22.23.2 <23`。使用固定版本检查和登录：
 
 ```sh
 npx -y confluence-rest-mcp@1.0.0-alpha.2 version

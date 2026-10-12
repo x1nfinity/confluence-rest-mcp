@@ -1,10 +1,12 @@
 # Confluence MCP alpha.2 发行说明
 
-日期：2026-10-12。当前状态：**发行待执行**。本页在源码推送和 npm 发布实际成功后更新结果。
+日期：2026-10-12。当前状态：**alpha.2 已公开发布，供只读有限试用**。
 
-包名为 `confluence-rest-mcp`，版本为 `1.0.0-alpha.2`，CLI 为 `confluence-mcp`，MCP 服务标识为 `confluence`。npm 试用标签为 `next`，发布目标为官方 registry 的 public 包。Node.js 要求 `>=22.23.2 <23`；发行验证使用 Node.js 22.23.2、npm 10.9.8、TypeScript 5.9.3。
+包名为 `confluence-rest-mcp`，版本为 [`1.0.0-alpha.2`](https://www.npmjs.com/package/confluence-rest-mcp/v/1.0.0-alpha.2)，CLI 为 `confluence-mcp`，MCP 服务标识为 `confluence`。包已发布至官方 registry，访问级别为 public，发布账号为 `xinfinity`。Node.js 要求 `>=22.23.2 <23`；发行验证使用 Node.js 22.23.2、npm 10.9.8、TypeScript 5.9.3。
 
-GitHub 仓库 [x1nfinity/confluence-rest-mcp](https://github.com/x1nfinity/confluence-rest-mcp) 已核实为 public，默认分支为 main，发行身份具有管理及推送权限。首次发行前远端为空，本轮建立首个源码提交。npm 当前登录账户已核对为 `xinfinity`；包名查询本次未检出，实际可发布性仍以 registry 发布结果为准。
+GitHub 仓库 [x1nfinity/confluence-rest-mcp](https://github.com/x1nfinity/confluence-rest-mcp) 为 public，默认分支为 main。[发行源码提交 `8c36bbc`](https://github.com/x1nfinity/confluence-rest-mcp/commit/8c36bbcdfd17c8a7d2a76a36f6d77b57e2b64813) 已推送，远端提交和 58 个公开源码文件均与审核清单一致。
+
+当前 registry 的 `next` 和 `latest` 均指向 `1.0.0-alpha.2`。`latest` 待维护者完成二次验证后移除并读回核实；试用期间请使用固定版本。
 
 采用 [MIT 许可](../LICENSE)，版权为 `Copyright (c) 2026 x1nfinity`。公开源码范围为 TypeScript 实现、通用文档和合成测试；npm 运行包采用 README、LICENSE、package.json、构建后 dist 的白名单。个人状态、系统凭据和客户端策略由成员本机保留。生产运行不依赖 Python，源码测试需要 Python 3.9+；额外的本机对照验收需要另备原实现。
 
@@ -19,25 +21,26 @@ GitHub 仓库 [x1nfinity/confluence-rest-mcp](https://github.com/x1nfinity/confl
 
 Windows 实机、Cursor、本人交互登录换密及真实测试空间受控写入仍待验收。Windows 说明见 [实机验收](WINDOWS-ACCEPTANCE.md)。alpha.2 为只读有限试用，正式 `1.0.0` 要求完成这些平台、客户端、认证和写入门槛。
 
-## 本轮发行验证与执行清单
+## 已执行的发行验证
 
-本机及不含原 Python 实现的公开源码隔离目录，均通过锁定依赖安装、类型检查、构建和源码测试：94 项中 90 项通过、4 项按环境条件跳过，无失败。合成文档和附件夹具共 857 个；本机原实现的 83 文件冻结基线检查通过。4 个跳过项涉及未启用的 Python／PowerShell Windows 模拟环境及非 Windows 的实机用例，不计为实机通过。
+发行预检已在本机和公开源码隔离目录通过锁定依赖安装、类型检查、构建和源码测试：94 项中 90 项通过、4 项按环境条件跳过，无失败。合成文档和附件夹具共 857 个；本机原实现的 83 文件冻结基线检查通过。4 个跳过项涉及未启用的 Python／PowerShell Windows 模拟环境及非 Windows 的实机用例，不计为实机通过。本轮发布后的验证覆盖公开包安装与运行，未重新执行完整源码测试。
 
-58 个公开源码文件已审查；真实验收资料与原 Python 安装保持在本机。JSON／TOML 示例及公共链接检查通过，测试中的身份和密码均为合成数据。运行包 dry-run 与实际 tarball 清单一致，共 21 个文件、57,208 字节；SHA-256 为 `4a74d43f808a70584317294334b631f53da5093cc6cbf228ecfee616bbb90fb2`。tarball 全部成员与本机发行产物逐字节一致，元数据、MIT 及 next／public／官方 registry 已核对。
+公开源码范围及 JSON／TOML 示例、公共链接检查通过，测试中的身份和密码均为合成数据。registry 下载的运行包与审核归档及发行产物逐字节一致，共 21 个文件、57,208 字节；SHA-256 为 `4a74d43f808a70584317294334b631f53da5093cc6cbf228ecfee616bbb90fb2`。运行包清单与 `npm pack --dry-run --json` 一致，包元数据、MIT、访问级别和 registry 已核对。
 
-含中文和空格的隔离目录安装通过：bin 可执行，离线 npx 返回 alpha.2，doctor 的零凭据／零网络检查为只读；实际 stdio 初始化、12 工具发现与非法参数拒绝通过，stderr 为空。隔离用户状态未发生写入。
+通过公开 package spec，在全新 cache 和包含中文、空格的隔离 HOME 目录执行 `--ignore-scripts` 安装，bin 可执行；`npx -y confluence-rest-mcp@1.0.0-alpha.2 version` 返回 `1.0.0-alpha.2`。`doctor --check` 确认为只读、12 工具、待认证；实际 stdio 初始化、12 工具发现及非法参数拒绝通过，stderr 为空。检查未读取站点凭据，隔离用户状态未发生写入。
 
-以下检查在最终文件冻结后执行，实际结果由发行人员补记：
+本机已有实现、个人状态和客户端策略保留，1,116 个已有文件的哈希检查一致。本次发行未写入 Confluence 页面。
 
-1. 使用固定工具链安装锁定依赖，运行类型检查、构建及源码测试，记录实际通过、跳过和失败项。
-2. 审查 Git 将公开的完整源码、通用文档和合成夹具；核对个人状态、凭据及私有材料未进入源码提交。
-3. 比对 `npm pack --dry-run --json` 和真实 tarball 的成员、元数据、许可及构建入口，并检查文件内容。运行包白名单不能替代 Git 源码审查。
-4. 在包含中文和空格的干净临时目录安装 tarball，验证版本、CLI、stdio 初始化、工具发现、非法参数拒绝和只读状态；合成站点测试不访问真实凭据或业务站点。
-5. 核对最终差异，提交并推送 main；推送成功后核对远端提交及公开内容。
-6. 在 `typescript/` 发布 `npm publish --tag next`，核对 registry 的具体版本、`next` 标签及实际安装内容，再更新发行状态。
+## 仍待完成
+
+- 移除 `latest` 标签并核实 registry 标签状态。
+- Windows 实机及 Cursor 客户端接入。
+- 本人交互登录换密及真实测试空间受控写入。
+
+后两项为正式 `1.0.0` 的验收门槛；alpha.2 的公开发行与安装验证已完成。
 
 ## 固定版本接入
 
-发布成功后使用 `npx -y confluence-rest-mcp@1.0.0-alpha.2`，客户端不要跟随浮动标签自动升级。JSON／TOML 配置和认证步骤见 [使用说明](../typescript/README.md)。示例站点为 `https://confluence.example.com/confluence`，默认系统 Keyring，显式 `CONFLUENCE_READ_ONLY=true`。
+使用 `npx -y confluence-rest-mcp@1.0.0-alpha.2`，客户端固定版本接入。JSON／TOML 配置和认证步骤见 [使用说明](../typescript/README.md)。示例站点为 `https://confluence.example.com/confluence`，默认系统 Keyring，显式 `CONFLUENCE_READ_ONLY=true`。
 
 登录由本人在交互终端隐藏输入；局部调整客户端启动字段，保留个人状态、系统凭据、已有本机实现和客户端策略。重载后在新会话实际读取正文、搜索和附件，独立确认宿主接入。
