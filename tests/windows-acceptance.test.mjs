@@ -5,8 +5,8 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CASES, scope, fixture, options, runSuite } from '../scripts/windows-acceptance.mjs';
-import { hookScript, LOCK_SCRIPT } from '../scripts/windows-acceptance-hooks.mjs';
+import { CASES, scope, fixture, options, runSuite, liveOps, main } from '../scripts/windows-acceptance.mjs';
+import { hookScript, referenceScript, LOCK_SCRIPT } from '../scripts/windows-acceptance-hooks.mjs';
 import { WINDOWS_SCRIPT } from '../dist/windows-credentials.js';
 
 const runId = '12345678-1234-4234-8234-123456789abc';
@@ -25,7 +25,7 @@ function model() {
   return { slots, calls, ops: {
     async probe() {}, async read(id) { return read(id); }, async write(id, raw) { write(id, raw); },
     async delete(id) { return del(id); }, async identityRejected() { throw new Error('IDENTITY_REJECTED'); },
-    async py(id, mode, extra) {
+    async reference(id, mode, extra) {
       calls.push([id, mode]); const pair = slots.get(id);
       if (mode === 'empty') assert.deepEqual(pair, [null, null]);
       else if (mode === 'save') pair[0] = { account: 'own', value: fixture(runId, extra.variant) };
@@ -67,29 +67,67 @@ test('preflight refuses occupied scopes and never cleans an unclaimed record', a
 });
 
 test('cleanup failure and unconfirmed native API failure remain visible', async () => {
-  const m = model(), py = m.ops.py;
-  m.ops.py = async (id, mode, extra) => {
+  const m = model(), reference = m.ops.reference;
+  m.ops.reference = async (id, mode, extra) => {
     if (id === 'lock' && mode === 'cleanup') throw new Error('CLEANUP_INCOMPLETE');
     if (mode === 'native_failure') return { ok: true, native_api_failure: false };
-    return py(id, mode, extra);
+    return reference(id, mode, extra);
   };
   const report = await runSuite(runId, m.ops);
   assert.equal(report.status, 'failed'); assert.ok(report.pending.includes('native_api_failure_not_confirmed'));
   assert.equal(report.cleanup.at(-1).code, 'CLEANUP_INCOMPLETE');
 });
 
-test('scope, flags and Python helper agree without accepting a personal base URL', () => {
+test('scope and flags reject personal sites and legacy Python options', () => {
   for (const value of ['', '../personal', '12345678-1234-1234-8234-123456789abc']) assert.throws(() => scope(value, 'interop'));
   assert.throws(() => scope(runId, 'personal')); assert.throws(() => options(['--base-url', 'https://example.com']));
   assert.throws(() => options(['--cleanup', runId, '--hold-lock', runId]));
-  assert.equal(options(['--python', 'C:\\测试 folder\\python.exe']).python, 'C:\\测试 folder\\python.exe');
-  const python = spawnSync('python3', ['-B', '-c',
-    'import runpy,json,sys; m=runpy.run_path(sys.argv[1]); r=json.load(sys.stdin); print(json.dumps({"scope":m["scope"](r),"fixture":m["fixture"](r["run_id"],"A"),"cases":m["CASES"]}))',
-    fileURLToPath(new URL('../scripts/windows-acceptance-python.py', import.meta.url))],
-    { input: JSON.stringify({ run_id: runId, case: 'interop' }), encoding: 'utf8' });
-  assert.equal(python.status, 0, python.stderr); const actual = JSON.parse(python.stdout);
-  assert.deepEqual(actual.scope, [runId, scope(runId, 'interop').base, scope(runId, 'interop').service]);
-  assert.deepEqual(actual.fixture, fixture(runId, 'A')); assert.deepEqual(actual.cases, CASES);
+  assert.throws(() => options(['--python', 'python.exe']));
+  assert.equal(options(['--report', 'C:\\测试 folder\\report.json']).report, 'C:\\测试 folder\\report.json');
+});
+
+test('Windows version gate accepts Node 22.12 and newer before validating the disposable scope', async () => {
+  const platform = Object.getOwnPropertyDescriptor(process, 'platform');
+  const version = Object.getOwnPropertyDescriptor(process.versions, 'node');
+  try {
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+    for (const node of ['20.19.0', '21.7.3', '22.0.0', '22.11.0', '22.12.0', '22.22.1', '24.21.0', '26.0.0']) {
+      Object.defineProperty(process.versions, 'node', { value: node, configurable: true });
+      await assert.rejects(main(['--cleanup', 'invalid-run-id']), {
+        message: ['20.19.0', '21.7.3', '22.0.0', '22.11.0'].includes(node) ? 'NODE_VERSION_REQUIRED' : 'INVALID_SCOPE',
+      });
+    }
+  } finally {
+    Object.defineProperty(process, 'platform', platform);
+    Object.defineProperty(process.versions, 'node', version);
+  }
+});
+
+test('raw reference adapter binds only disposable scopes, known accounts and complete UTF16 records', async () => {
+  const calls = [], run = async (executable, args, input) => { calls.push({ executable, args, input }); return { ok: true }; };
+  const ops = liveOps(runId, run, 'powershell.exe');
+  await ops.reference('interop', 'save', { variant: 'A' });
+  await ops.reference('collision', 'seed', { slot: 1, account: 'foreign-a', variant: 'foreign-a' });
+  await ops.reference('interop', 'slot', { slot: 1, variant: null });
+  assert.equal((await ops.reference('failure', 'native_failure')).native_api_failure, true);
+  for (const call of calls) {
+    assert.equal(call.executable, 'powershell.exe');
+    assert.ok(call.input.service.startsWith('confluence-mcp:'));
+    assert.equal(call.input.records.length, 4);
+    assert.equal(call.input.users.length, 3);
+    assert.ok(!call.args.join(' ').includes('synthetic-'));
+    assert.ok(!call.args.join(' ').includes(runId));
+  }
+  assert.equal(calls[0].input.mode, 'seed'); assert.equal(calls[0].input.slot, 0);
+  assert.deepEqual(JSON.parse(Buffer.from(calls[0].input.record, 'base64').toString('utf16le')), fixture(runId, 'A'));
+  assert.equal(calls[1].input.user, 'acceptance-foreign-' + runId + '-a');
+  assert.equal(calls[2].input.record, null);
+  const count = calls.length;
+  await assert.rejects(ops.reference('personal', 'cleanup'));
+  await assert.rejects(ops.reference('interop', 'seed', { slot: 2, account: 'own', variant: 'A' }));
+  await assert.rejects(ops.reference('interop', 'seed', { slot: 0, account: 'personal', variant: 'A' }));
+  await assert.rejects(ops.reference('interop', 'save', { variant: 'personal' }));
+  assert.equal(calls.length, count);
 });
 
 test('Windows script exits before any platform operation on other hosts', { skip: process.platform === 'win32' }, () => {
@@ -121,6 +159,33 @@ exit 0
 `);
       // The ABI stub handles both Advapi32 and the fault-only kernel32 SetLastError entry.
       const svc = scope(runId, 'failure').service;
+      const rawReference = referenceScript().replace('$request =', bootstrap.replaceAll('ConfluenceWinCred', 'AcceptanceWinCred') + '\n$request =');
+      const invokeReference = input => spawnSync(process.env.CONFLUENCE_TEST_PWSH,
+        ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(rawReference, 'utf16le').toString('base64')],
+        { encoding: 'utf8', input: JSON.stringify(input), env: { ...process.env, CONFLUENCE_TEST_NATIVE: lib } });
+      const serviceName = scope(runId, 'interop').service;
+      const record = Buffer.from(JSON.stringify(fixture(runId, 'A')), 'utf16le').toString('base64');
+      const request = { service: serviceName, mode: 'seed', slot: 0, user: 'confluence-credentials', record,
+        users: ['confluence-credentials'], records: [record] };
+      let rawResult = invokeReference(request);
+      assert.equal(rawResult.status, 0, rawResult.stderr); assert.deepEqual(JSON.parse(rawResult.stdout), { ok: true });
+      const known = rawReference.replace('$request =', '[FakeCred]::Seed("' + serviceName + '", "confluence-credentials", [Convert]::FromBase64String("' + record + '"), ' + Buffer.from(record, 'base64').length + ')\n$request =');
+      for (const mode of ['slot', 'native_failure', 'cleanup', 'empty']) {
+        const script = known.replace("[Console]::Out.Write('{\"ok\":true}')",
+          mode === 'cleanup' ? 'if ([FakeCred]::Deletes() -ne 1) { throw "DELETE_NOT_EXECUTED" }\n[Console]::Out.Write(\'{"ok":true}\')'
+            : "[Console]::Out.Write('{\"ok\":true}')");
+        rawResult = spawnSync(process.env.CONFLUENCE_TEST_PWSH,
+          ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')],
+          { encoding: 'utf8', input: JSON.stringify({ ...request, mode }), env: { ...process.env, CONFLUENCE_TEST_NATIVE: lib } });
+        assert.equal(rawResult.status, mode === 'empty' ? 1 : 0, rawResult.stderr);
+        assert.deepEqual(JSON.parse(rawResult.stdout), mode === 'empty' ? { ok: false, code: 'SCOPE_OCCUPIED' } : { ok: true });
+      }
+      // The fake store resets for each process; bootstrap a recognized or foreign record to test guards.
+      const seeded = rawReference.replace('$request =', '[FakeCred]::Seed("' + serviceName + '", "foreign", [byte[]]@(1, 2), 2)\n$request =');
+      rawResult = spawnSync(process.env.CONFLUENCE_TEST_PWSH,
+        ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(seeded, 'utf16le').toString('base64')],
+        { encoding: 'utf8', input: JSON.stringify({ ...request, mode: 'cleanup' }), env: { ...process.env, CONFLUENCE_TEST_NATIVE: lib } });
+      assert.equal(rawResult.status, 1); assert.equal(JSON.parse(rawResult.stdout).code, 'SCOPE_OCCUPIED');
       const old = Buffer.from(JSON.stringify(fixture(runId, 'A')), 'utf16le').toString('base64');
       const next = Buffer.from(JSON.stringify(fixture(runId, 'B')), 'utf16le').toString('base64');
       for (const fault of ['fail-write', 'fail-delete', 'race-read']) {

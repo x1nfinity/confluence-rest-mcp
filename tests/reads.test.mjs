@@ -6,7 +6,7 @@ import { Confluence, tools } from '../dist/confluence.js';
 import { RestClient } from '../dist/rest.js';
 import { ReadError } from '../dist/errors.js';
 
-const baseline = JSON.parse(readFileSync(new URL('../baseline/python-0.14.0.json', import.meta.url)));
+const baseline = JSON.parse(readFileSync(new URL('./fixtures/reads.json', import.meta.url)));
 const base = 'https://example.com/confluence';
 const credential = async () => ({ username: 'test-user', password: 'synthetic-password' });
 const code = expected => error => error.code === expected;
@@ -19,7 +19,8 @@ for (const fixture of baseline.fixtures) test('Python text and headings parity: 
 });
 test('full catalog preserves twelve original schemas and annotations', () => {
   const contract = ({ description, ...tool }) => tool;
-  assert.deepEqual(tools.map(contract), baseline.tools.map(contract));
+  assert.deepEqual(tools.slice(0, baseline.tools.length).map(contract), baseline.tools.map(contract));
+  assert.equal(new Set(tools.map(t => t.name)).size, tools.length);
 });
 test('invalid requests across full catalog are rejected before network access', async () => {
   let sent = 0; const api = new Confluence(new RestClient(base, 1, credential, async () => { sent++; return {}; }));

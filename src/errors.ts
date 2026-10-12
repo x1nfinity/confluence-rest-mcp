@@ -5,8 +5,12 @@ const policyErrors: Record<string, [string, boolean, string]> = {
   WRITE_SCOPE_REQUIRED: ['真实写入需要本机配置非空空间白名单。', false, 'configure_write_spaces'],
   SPACE_NOT_ALLOWED: ['目标空间不在本机写入白名单中。', false, 'check_write_spaces'],
   POLICY_INVALID: ['本机工具或空间策略无效，请核对 policy.json。', false, 'check_policy'],
+  FILE_INVALID: ['上传需要可读取的普通文件和安全文件名。', false, 'check_upload_file'],
+  FILE_TOO_LARGE: ['上传文件超过 4 MiB 限制。', false, 'reduce_upload_size'],
+  TARGET_EXISTS: ['目标页面已有同名附件，本工具不覆盖已有附件。', false, 'choose_new_filename'],
 };
 const errors = { ...(contracts.errors as unknown as Record<string, [string, boolean, string]>), ...policyErrors };
+export function isKnownErrorCode(code: string): boolean { return Object.hasOwn(errors, code); }
 
 export class ReadError extends Error {
   constructor(public code = 'READ_FAILED', public httpStatus?: number,

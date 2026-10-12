@@ -68,9 +68,11 @@ export function configuration(env: Environment = process.env, directory = stateD
   if (source !== 'keyring' && source !== 'env') throw new ReadError('AUTH_CONFIG_INVALID');
   if (env.CONFLUENCE_READ_ONLY !== undefined && !['true', 'false'].includes(env.CONFLUENCE_READ_ONLY))
     throw new ReadError('AUTH_CONFIG_INVALID');
+  if (env.CONFLUENCE_AUDIT !== undefined && !['true', 'false'].includes(env.CONFLUENCE_AUDIT))
+    throw new ReadError('AUTH_CONFIG_INVALID');
   const timeout = Number(env.CONFLUENCE_TIMEOUT_SECONDS ?? '45');
   if (!Number.isFinite(timeout) || timeout <= 0 || timeout > 120) throw new ReadError('INVALID_REQUEST');
   return { base: normalizeBase(env.CONFLUENCE_BASE_URL ?? site.base_url), source,
     timeout, readOnly: env.CONFLUENCE_READ_ONLY === 'true' || auth.allow_write !== true, allow_write: auth.allow_write === true,
-    policy: policy(directory), directory };
+    policy: policy(directory), directory, auditEnabled: env.CONFLUENCE_AUDIT === 'true' };
 }

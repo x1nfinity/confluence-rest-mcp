@@ -108,23 +108,6 @@ test('Windows CLI login reaches hidden-input boundary and never reads a keyring 
   }
 });
 
-test('actual pinned Python auth and WinVault backend exchange UTF16 JSON using an in-memory API',
-  { skip: !process.env.CONFLUENCE_TEST_PYTHON }, () => {
-    const updated = { ...fixture, password: '更新合成😀' };
-    for (const records of [[{ target: name, account: 'confluence-credentials', blob: Buffer.from(raw, 'utf16le').toString('base64') }],
-      [{ target: name, account: 'foreign', blob: Buffer.from('synthetic-foreign', 'utf16le').toString('base64') },
-        { target: 'confluence-credentials@' + name, account: 'confluence-credentials', blob: Buffer.from(raw, 'utf16le').toString('base64') }]]) {
-      const result = spawnSync(process.env.CONFLUENCE_TEST_PYTHON, ['-B',
-        fileURLToPath(new URL('../scripts/windows-keyring-reference.py', import.meta.url))],
-      { encoding: 'utf8', input: JSON.stringify({ base, service: name, records, expected: fixture, updated }),
-        env: { ...process.env, PYTHONPATH: fileURLToPath(new URL('../../native/src', import.meta.url)) } });
-      assert.equal(result.status, 0, result.stderr);
-      const returned = JSON.parse(result.stdout);
-      assert.deepEqual(JSON.parse(Buffer.from(returned.record, 'base64').toString('utf16le')), updated);
-      assert.equal(returned.deleted, true);
-    }
-  });
-
 test('Windows OS disposable-target roundtrip',
   { skip: process.platform !== 'win32' || process.env.CONFLUENCE_TEST_WINDOWS !== '1' }, async () => {
     const isolatedBase = 'https://windows-credential-check.example.invalid/' + randomUUID();
@@ -161,16 +144,6 @@ test('production WinCred bridge compiles and runs against an isolated native ABI
       const actualBlob = JSON.parse(result.stdout).blob;
       const actual = JSON.parse(Buffer.from(actualBlob, 'base64').toString('utf16le'));
       assert.deepEqual(actual, { username: '测试😀', password: '合成\\"😀' });
-      if (process.env.CONFLUENCE_TEST_PYTHON) {
-        const compared = spawnSync(process.env.CONFLUENCE_TEST_PYTHON, ['-B',
-          fileURLToPath(new URL('../scripts/windows-keyring-reference.py', import.meta.url))],
-        { encoding: 'utf8', input: JSON.stringify({ base, service: name,
-          records: [{ target: name, account: 'confluence-credentials', blob: actualBlob }],
-          expected: actual, updated: fixture }),
-          env: { ...process.env, PYTHONPATH: fileURLToPath(new URL('../../native/src', import.meta.url)) } });
-        assert.equal(compared.status, 0, compared.stderr);
-        assert.deepEqual(JSON.parse(Buffer.from(JSON.parse(compared.stdout).record, 'base64').toString('utf16le')), fixture);
-      }
       // Exercise the complete production stdin/JSON/stdout wrapper with the same ABI fixture.
       const bootstrap = cases.slice(0, cases.indexOf('$site ='));
       const wrapped = simulated.replace('$request =', bootstrap + '\n$request =');

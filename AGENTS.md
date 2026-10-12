@@ -1,8 +1,8 @@
 # Confluence MCP 开发与使用
 
-公开实现位于 `typescript/`。安装、认证、客户端接入和开发先读 `typescript/README.md`；发行读 `docs/RELEASE.md`，Windows 实机验收读 `docs/WINDOWS-ACCEPTANCE.md`。
+安装、认证、客户端接入和开发先读根目录 `README.md`；发行读 `docs/RELEASE.md`，Windows 实机验收读 `docs/WINDOWS-ACCEPTANCE.md`。
 
-实现位于 `typescript/src/`，测试位于 `typescript/tests/`，开发与验收脚本位于 `typescript/scripts/`。以 `typescript/package.json`、`package-lock.json` 和实际 CLI 为准，使用 Node.js 22.23.2、npm 10.9.8、TypeScript 5.9.3。在 `typescript/` 执行 `npm ci --ignore-scripts`、`npm run typecheck`、`npm test` 和 `npm pack --dry-run --json`；默认源码测试需要 Python 3.9+，生产运行不需要 Python。可选本机对照工具另需原 Python 实现，先确认环境再运行。
+实现位于 `src/`，测试位于 `tests/`，开发与验收脚本位于 `scripts/`。运行版本范围以 `package.json` 的 `engines.node` 为准，开发环境固定 Node.js 22.23.2、npm 10.9.8、TypeScript 5.9.3。在仓库根目录执行 `npm ci --ignore-scripts`、`npm run typecheck`、`npm test` 和 `npm pack --dry-run --json`；生产运行、构建及源码测试均使用 Node.js；Windows 实机验收另需系统 Windows PowerShell 5.1。
 
 修改前沿真实调用链阅读相关实现、契约、调用方和测试。保持工具 schema、annotations、错误结构和分页行为一致；变更公共契约时同步合成夹具与相关测试。发行前构建 dist，分别审查 Git 源码和 npm 包实际清单。保留本机已有实现、个人 `.local/`、`.venv/`、系统凭据以及客户端批准、禁用、超时和其他服务配置，不将这些内容纳入发行。诊断时不读取或输出密码、凭据记录、请求头或客户端秘密。
 

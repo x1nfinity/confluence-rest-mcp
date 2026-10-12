@@ -121,6 +121,21 @@ export class Confluence {
     if (name === 'get_attachments') return this.attachments(args);
     if (name === 'get_children') return this.children(args);
     if (name === 'get_comments') return this.comments(args);
+    if (name === 'get_labels') {
+      const id = await this.resolve(String(args.pageId));
+      const page = await this.rest.get('content/' + id, { expand: 'space,version' });
+      const version = object(page.version).number;
+      if (String(page.id) !== id || page.type !== 'page' || page.status !== 'current'
+        || !Number.isSafeInteger(version) || Number(version) < 1) throw new ReadError('CONTENT_INCOMPLETE');
+      if (args.expected_version !== undefined && args.expected_version !== version) throw new ReadError('PAGE_VERSION_CHANGED');
+      const start = Number(args.start ?? 0), limit = Number(args.limit ?? 25);
+      const data = await this.rest.get('content/' + id + '/label', { prefix: 'global', start, limit });
+      return { ...this.summary(page), results: list(data.results).map(value => {
+        const item = object(value);
+        if (item.prefix !== 'global' || typeof item.name !== 'string' || typeof item.id !== 'string') throw new ReadError('CONTENT_INCOMPLETE');
+        return { id: item.id, prefix: item.prefix, name: item.name };
+      }), pagination: this.pagination(data, start, limit), scope: 'global_labels', warnings: ['page_version_does_not_pin_label_changes'] };
+    }
     if (name === 'compare_page_versions') return this.compare(args);
     if (name === 'get_page_structure') {
       validateStructure(args);

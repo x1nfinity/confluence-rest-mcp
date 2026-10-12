@@ -52,7 +52,7 @@ export async function main(argv = process.argv.slice(2)) {
   const config = configuration(env);
   const rest = new RestClient(config.base, config.timeout, signal => credentials(config.base, config.source, env, undefined, signal));
   const api = new Confluence(rest, config);
-  if (command === 'serve') { await serve(api); return; }
+  if (command === 'serve') { await serve(api, config.auditEnabled); return; }
   let result: unknown;
   if (command === 'login') {
     if (config.source !== 'keyring') throw new ReadError('AUTH_CONFIG_INVALID');
@@ -65,6 +65,7 @@ export async function main(argv = process.argv.slice(2)) {
       credential_source: config.source,
       read_only: config.readOnly || !config.allow_write || !config.policy.write_spaces?.length,
       enabled_tools: api.tools.map(t => t.name), write_scope_configured: !!config.policy.write_spaces?.length,
+      audit_enabled: config.auditEnabled,
       authentication: 'pending',
       page_read: 'pending', host_reload: 'pending', windows_acceptance: 'pending' };
     if (!values.check) {

@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { configuration, policy } from '../dist/config.js';
 import { Confluence, tools } from '../dist/confluence.js';
 import { RestClient, allowedRoute, httpError } from '../dist/rest.js';
@@ -31,7 +30,7 @@ test('policy validates all fields; discovery and direct calls use the same start
     writeFileSync(join(directory, 'policy.json'), JSON.stringify({ enabled_tools: ['get_page'], write_spaces: ['DEMO'] }));
     assert.equal(api.tools.length, 0);
     assert.deepEqual(new Confluence(new RestClient(base, 1, load), configuration(env, directory)).tools.map(t => t.name), ['get_page']);
-    assert.equal(tools.length, 12);
+    assert.equal(tools.length, 19);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
@@ -72,14 +71,9 @@ test('separate comments discard identity metadata and preserve discussion scope'
 });
 
 test('unified diff matches Python contexts, repeated lines and unterminated Unicode lines', () => {
-  const pairs = [['', 'one'], ['one', 'one\n'], ['a\r\n', 'a\n'], ['😀\nx\n', '😀\ny\n'],
-    ['a\nb\nc\nd\ne\nf\ng\nh\ni\nj\n', 'x\nb\nc\nd\ne\nf\ng\nh\ni\nz\n'],
-    ['same\n'.repeat(220), 'new\n' + 'same\n'.repeat(220)], ['a\vB\u2028C', 'a\vX\u2028C']];
-  let seed = 17; const rand = () => { seed = (seed * 48271) % 2147483647; return seed; };
-  for (let i = 0; i < 50; i++) pairs.push([Array.from({ length: rand() % 25 }, () => String(rand() % 5) + '\n').join(''), Array.from({ length: rand() % 25 }, () => String(rand() % 5) + '\n').join('')]);
-  const p = spawnSync('python3', ['-B', '-c', "import sys,json,difflib; pairs=json.load(sys.stdin); print(json.dumps([''.join(line if line.endswith('\\n') else line+'\\n\\\\ No newline at end of file\\n' for line in difflib.unified_diff(a.splitlines(keepends=True),b.splitlines(keepends=True),fromfile='before',tofile='after')) for a,b in pairs]))"], { input: JSON.stringify(pairs), encoding: 'utf8' });
-  assert.equal(p.status, 0); const expected = JSON.parse(p.stdout);
-  pairs.forEach(([a, b], i) => assert.equal(unifiedDiff(a, b, 'before', 'after'), expected[i], 'fixture ' + i));
+  const vectors = JSON.parse(readFileSync(new URL('./fixtures/history.json', import.meta.url)));
+  vectors.forEach(({ before, after, expected }, i) =>
+    assert.equal(unifiedDiff(before, after, 'before', 'after'), expected, 'fixture ' + i));
 });
 
 test('write transport sends a single request and never retries uncertainty or conflicts', async () => {

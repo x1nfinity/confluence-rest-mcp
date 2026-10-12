@@ -1,11 +1,13 @@
 import https from 'node:https';
+import { createHash, randomBytes } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { type Credentials, validCredentials } from './auth.js';
 import { normalizeBase } from './config.js';
 import { ReadError } from './errors.js';
 
 const JSON_LIMIT = 2 * 1024 * 1024, BINARY_LIMIT = 4 * 1024 * 1024;
-export type RequestOptions = { method?: 'GET' | 'POST' | 'PUT'; payload?: Record<string, unknown> };
+export type WritePayload = Record<string, unknown> | Record<string, unknown>[];
+export type RequestOptions = { method?: 'GET' | 'POST' | 'PUT' | 'DELETE'; payload?: WritePayload; file?: Buffer };
 export type Sender = (url: URL, credentials: Credentials, timeout: number, options?: RequestOptions) => Promise<Record<string, unknown>>;
 export type BinarySender = (url: URL, credentials: Credentials, timeout: number) => Promise<Buffer>;
 export function allowedRoute(base: string, value: string, method = 'GET', binary = false): URL {
@@ -31,11 +33,17 @@ export function allowedRoute(base: string, value: string, method = 'GET', binary
       return url;
     }
     const patterns: Record<string, RegExp> = {
-      GET: /^(?:content(?:\/search|\/[0-9]+(?:\/(?:child\/(?:attachment|page|comment)|descendant\/comment))?)?|user\/current)$/u,
-      POST: /^content$/u, PUT: /^content\/[0-9]+$/u,
+      GET: /^(?:content(?:\/search|\/[0-9]+(?:\/(?:label|child\/(?:attachment|page|comment)|descendant\/comment))?)?|user\/current)$/u,
+      POST: /^content(?:\/[0-9]+\/(?:label|child\/attachment))?$/u, PUT: /^content\/[0-9]+$/u,
+      DELETE: /^content\/[0-9]+\/label$/u,
     };
+    const upload = method === 'POST' && /^content\/[0-9]+\/child\/attachment$/u.test(rawPath.slice(prefix.length));
     if (binary || rawPath.includes('%') || !rawPath.startsWith(prefix) || !patterns[method]?.test(rawPath.slice(prefix.length))
-      || (method !== 'GET' && url.search)) throw 0;
+      || (method !== 'GET' && method !== 'DELETE' && !upload && url.search)) throw 0;
+    if (upload && (Array.from(url.searchParams.keys()).sort().join(',') !== 'allowDuplicated,expand'
+      || url.searchParams.get('allowDuplicated') !== 'false' || url.searchParams.get('expand') !== 'container,version')) throw 0;
+    if (method === 'DELETE' && (Array.from(url.searchParams.keys()).join(',') !== 'name'
+      || !validLabel(url.searchParams.get('name')))) throw 0;
     return url;
   } catch { throw new ReadError('INVALID_ROUTE'); }
 }
@@ -52,39 +60,84 @@ export function httpError(status: number, retryHeader?: string, write = false) {
   }
   return new ReadError(code, status, delay, write || (retryHeader !== undefined && delay === undefined) ? false : undefined);
 }
-function payloadBytes(method: string, url: URL, payload: Record<string, unknown>) {
-  const permitted = method === 'POST' ? ['type', 'title', 'body', 'status', 'space', 'ancestors']
-    : ['id', 'type', 'title', 'body', 'status', 'version'];
+export function validLabel(value: unknown): value is string {
+  return typeof value === 'string' && /^[^\s\x00-\x1f\x7f<>\p{Surrogate}]{1,255}$/u.test(value);
+}
+function payloadBytes(method: string, url: URL, input: WritePayload) {
   const plain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
   const keys = (v: Record<string, unknown>, expected: string[]) => Object.keys(v).sort().join(',') === expected.sort().join(',');
-  if (!plain(payload) || payload.type !== 'page' || Object.keys(payload).some(k => !permitted.includes(k))
+  if (method === 'DELETE') {
+    if (!plain(input) || Object.keys(input).length) throw new ReadError('INVALID_PAYLOAD');
+    return undefined;
+  }
+  if (/\/content\/[0-9]+\/label$/u.test(url.pathname)) {
+    if (method !== 'POST' || !Array.isArray(input) || !input.length || input.length > 20
+      || input.some(v => !v || Object.keys(v).sort().join(',') !== 'name,prefix' || v.prefix !== 'global' || !validLabel(v.name))
+      || new Set(input.map(v => v.name)).size !== input.length) throw new ReadError('INVALID_PAYLOAD');
+    return Buffer.from(JSON.stringify(input));
+  }
+  if (!plain(input)) throw new ReadError('INVALID_PAYLOAD');
+  const payload = input;
+  const permitted = method === 'POST' ? ['type', 'title', 'body', 'status', 'space', 'ancestors']
+    : ['id', 'type', 'title', 'body', 'status', 'version', 'ancestors'];
+  if (method === 'POST' && payload.type === 'comment') {
+    if (Object.keys(payload).sort().join(',') !== 'body,container,type' || !plain(payload.container)
+      || !keys(payload.container, ['id', 'type']) || payload.container.type !== 'page'
+      || typeof payload.container.id !== 'string' || !/^[1-9][0-9]*$/u.test(payload.container.id)
+      || !plain(payload.body) || !keys(payload.body, ['storage']) || !plain(payload.body.storage)
+      || !keys(payload.body.storage, ['value', 'representation']) || payload.body.storage.representation !== 'storage'
+      || typeof payload.body.storage.value !== 'string' || !payload.body.storage.value.trim()
+      || /\x00|\p{Surrogate}/u.test(payload.body.storage.value) || Buffer.byteLength(payload.body.storage.value) > 1048576)
+      throw new ReadError('INVALID_PAYLOAD');
+    return Buffer.from(JSON.stringify(payload));
+  }
+  const moving = method === 'PUT' && payload.ancestors !== undefined && payload.body === undefined;
+  if (payload.type !== 'page' || Object.keys(payload).some(k => !permitted.includes(k))
     || typeof payload.title !== 'string' || !payload.title.trim() || [...payload.title].length > 255 || payload.title.includes('\0')
-    || (payload.status !== undefined && payload.status !== 'current') || !plain(payload.body) || !keys(payload.body, ['storage'])
+    || /\p{Surrogate}/u.test(payload.title) || (payload.status !== undefined && payload.status !== 'current')
+    || !moving && (!plain(payload.body) || !keys(payload.body, ['storage'])
     || !plain(payload.body.storage) || !keys(payload.body.storage, ['value', 'representation'])
     || payload.body.storage.representation !== 'storage' || typeof payload.body.storage.value !== 'string'
     || !payload.body.storage.value.trim() || /\x00|\p{Surrogate}/u.test(payload.body.storage.value + payload.title)
-    || Buffer.byteLength(payload.body.storage.value) > 1048576) throw new ReadError('INVALID_PAYLOAD');
+    || Buffer.byteLength(payload.body.storage.value) > 1048576)) throw new ReadError('INVALID_PAYLOAD');
   if (method === 'POST') {
     if (!plain(payload.space) || !keys(payload.space, ['key']) || typeof payload.space.key !== 'string'
       || !payload.space.key.trim() || [...payload.space.key].length > 255 || /\x00|\p{Surrogate}/u.test(payload.space.key)) throw new ReadError('INVALID_PAYLOAD');
-    if (payload.ancestors !== undefined && (!Array.isArray(payload.ancestors) || payload.ancestors.length > 1
-      || payload.ancestors.some(p => !plain(p) || !keys(p, ['id']) || typeof p.id !== 'string' || !/^[1-9][0-9]*$/u.test(p.id)))) throw new ReadError('INVALID_PAYLOAD');
   } else if (payload.id !== url.pathname.split('/').at(-1) || !plain(payload.version) || !keys(payload.version, ['number'])
     || !Number.isSafeInteger(payload.version.number) || Number(payload.version.number) < 2) throw new ReadError('INVALID_PAYLOAD');
+  if (payload.ancestors !== undefined && (!Array.isArray(payload.ancestors) || payload.ancestors.length > 1
+    || method === 'PUT' && payload.ancestors.length !== 1
+    || payload.ancestors.some(p => !plain(p) || !keys(p, ['id']) || typeof p.id !== 'string' || !/^[1-9][0-9]*$/u.test(p.id)))) throw new ReadError('INVALID_PAYLOAD');
   const bytes = Buffer.from(JSON.stringify(payload));
   if (bytes.length > 8 * 1048576) throw new ReadError('INVALID_PAYLOAD');
   return bytes;
 }
+function requestBody(method: string, url: URL, options: RequestOptions) {
+  if (/\/content\/[0-9]+\/child\/attachment$/u.test(url.pathname) && method === 'POST') {
+    const meta = options.payload;
+    if (!meta || Array.isArray(meta) || Object.keys(meta).sort().join(',') !== 'filename,sha256,size'
+      || typeof meta.filename !== 'string' || !meta.filename || Buffer.byteLength(meta.filename) > 255
+      || /["/\\\x00-\x1f\x7f\p{Surrogate}]/u.test(meta.filename) || ['.', '..'].includes(meta.filename)
+      || !Buffer.isBuffer(options.file) || options.file.length > BINARY_LIMIT || meta.size !== options.file.length
+      || meta.sha256 !== createHash('sha256').update(options.file).digest('hex')) throw new ReadError('INVALID_PAYLOAD');
+    const boundary = 'confluence-' + randomBytes(24).toString('hex');
+    const data = Buffer.concat([Buffer.from('--' + boundary + '\r\nContent-Disposition: form-data; name="file"; filename="'
+      + meta.filename + '"\r\nContent-Type: application/octet-stream\r\n\r\n'), options.file, Buffer.from('\r\n--' + boundary + '--\r\n')]);
+    return { data, headers: { 'Content-Type': 'multipart/form-data; boundary=' + boundary, 'X-Atlassian-Token': 'nocheck' } };
+  }
+  if (options.file !== undefined) throw new ReadError('INVALID_PAYLOAD');
+  return { data: payloadBytes(method, url, options.payload ?? {}), headers: method === 'DELETE' ? {} : { 'Content-Type': 'application/json; charset=utf-8' } };
+}
 function requestBytes(url: URL, input: Credentials, timeout: number, options: RequestOptions = {}, binary = false): Promise<Buffer> {
   const credential = validCredentials(input), method = options.method ?? 'GET', write = method !== 'GET';
-  const data = write ? payloadBytes(method, url, options.payload ?? {}) : undefined;
-  if (!write && options.payload !== undefined) throw new ReadError('INVALID_PAYLOAD');
+  const body = write ? requestBody(method, url, options) : undefined, data = body?.data;
+  if (!write && (options.payload !== undefined || options.file !== undefined)) throw new ReadError('INVALID_PAYLOAD');
   return new Promise((resolve, reject) => {
     let finished = false;
     const req = https.request(url, { method, agent: false, headers: {
       Accept: binary ? 'application/octet-stream' : 'application/json',
       Authorization: 'Basic ' + Buffer.from(credential.username + ':' + credential.password).toString('base64'),
-      ...(write ? { 'Content-Type': 'application/json; charset=utf-8' } : {}),
+      ...body?.headers, ...(data ? { 'Content-Length': String(data.length) } : {}),
     } });
     const timer = setTimeout(() => req.destroy(new ReadError(write ? 'WRITE_UNCERTAIN' : 'NETWORK_FAILED')), timeout * 1000);
     const fail = (error: ReadError) => { if (finished) return; finished = true; clearTimeout(timer); req.destroy(); reject(error); };
@@ -93,10 +146,11 @@ function requestBytes(url: URL, input: Credentials, timeout: number, options: Re
       fail(error instanceof ReadError ? error : new ReadError(write ? 'WRITE_UNCERTAIN' : 'NETWORK_FAILED', undefined, undefined, write || tls ? false : undefined));
     });
     req.on('response', response => {
-      if (!(response.statusCode === 200 || (write && [201, 202].includes(response.statusCode ?? 0)))) {
+      const emptyDelete = method === 'DELETE' && response.statusCode === 204;
+      if (!(response.statusCode === 200 || (write && [201, 202].includes(response.statusCode ?? 0)) || emptyDelete)) {
         response.destroy(); fail(httpError(response.statusCode ?? 0, response.headers['retry-after'], write)); return;
       }
-      if (!binary && !response.headers['content-type']?.toLowerCase().includes('application/json')) {
+      if (!binary && !emptyDelete && !response.headers['content-type']?.toLowerCase().includes('application/json')) {
         response.destroy(); fail(new ReadError(write ? 'WRITE_UNCERTAIN' : 'LOGIN_REQUIRED')); return;
       }
       const chunks: Buffer[] = []; let size = 0;
@@ -113,6 +167,7 @@ function requestBytes(url: URL, input: Credentials, timeout: number, options: Re
 }
 export const sendJson: Sender = async (url, input, timeout, options = {}) => {
   const bytes = await requestBytes(url, input, timeout, options);
+  if (options.method === 'DELETE' && !bytes.length) return {};
   try {
     const value: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw 0;
@@ -153,13 +208,14 @@ export class RestClient {
     return this.read(url, this.sender, explicit, budget);
   }
   async download(value: string): Promise<Buffer> { return this.read(allowedRoute(this.base, value, 'GET', true), this.binarySender); }
-  async write(method: 'POST' | 'PUT', path: string, payload: Record<string, unknown>) {
+  async write(method: 'POST' | 'PUT' | 'DELETE', path: string, payload: WritePayload, file?: Buffer) {
     const url = allowedRoute(this.base, this.base + '/rest/api/' + path, method);
-    payloadBytes(method, url, payload);
+    const options = { method, payload, ...(file ? { file } : {}) };
+    requestBody(method, url, options);
     const start = performance.now(), input = await this.load(AbortSignal.timeout(Math.ceil(this.timeout * 1000)));
     const remaining = this.timeout - (performance.now() - start) / 1000;
     if (remaining <= 0) throw new ReadError('NETWORK_FAILED');
-    try { return await this.sender(url, validCredentials(input), remaining, { method, payload }); }
+    try { return await this.sender(url, validCredentials(input), remaining, options); }
     catch (e) { if (e instanceof ReadError) throw e; throw new ReadError('WRITE_UNCERTAIN'); }
   }
   async verify(explicit?: Credentials) {

@@ -1,4 +1,5 @@
 {
+  "version": "0.14.0",
   "tools": [
     {
       "name": "get_page",
@@ -783,5 +784,76 @@
       false,
       "check_supported_operations"
     ]
+  },
+  "fixtures": [
+    {
+      "name": "plain",
+      "html": "<h1 id=\"intro\">简介😀</h1><p>Alpha &amp; 中文</p><p>第二段</p>",
+      "text": "简介😀\n\nAlpha & 中文\n\n第二段",
+      "sections": [
+        {
+          "level": 1,
+          "title": "简介😀",
+          "ordinal": 1,
+          "anchor": "intro"
+        }
+      ]
+    },
+    {
+      "name": "lists",
+      "html": "<ol><li>一<ul><li>二</li></ul></li><li>三</li></ol>",
+      "text": "1. 一\n  - 二\n\n2. 三",
+      "sections": []
+    },
+    {
+      "name": "links",
+      "html": "<p><a href=\"/confluence/display/DEMO/Plan\">计划</a><img alt=\"图\" src=\"/confluence/img.png\"></p>",
+      "text": "计划 (https://example.com/confluence/display/DEMO/Plan)[图片: 图] https://example.com/confluence/img.png",
+      "sections": []
+    },
+    {
+      "name": "strike",
+      "html": "<p>现行<del>旧规则</del><span style=\"text-decoration: line-through\">废弃</span></p>",
+      "text": "现行[删除线: 旧规则][删除线: 废弃]",
+      "sections": []
+    },
+    {
+      "name": "pre",
+      "html": "<pre> a\n  b</pre><script>hidden</script><p>可读</p>",
+      "text": "a\n  b\n\n可读",
+      "sections": []
+    },
+    {
+      "name": "table_text",
+      "html": "<table><tr><th>名称</th><th>值</th></tr><tr><td>A</td><td>1</td></tr></table>",
+      "text": "名称\t值\n\n\tA\t1",
+      "sections": []
+    },
+    {
+      "name": "long_unicode",
+      "html": "<p>中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc</p>",
+      "text": "中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc中文😀abc",
+      "sections": []
+    }
+  ],
+  "preview_vector": {
+    "base": "https://example.com/confluence",
+    "method": "POST",
+    "path": "content",
+    "payload": {
+      "type": "page",
+      "title": "中文😀",
+      "body": {
+        "storage": {
+          "representation": "storage",
+          "value": "<p>内容</p>"
+        }
+      },
+      "space": {
+        "key": "DEMO"
+      },
+      "status": "current"
+    },
+    "hash": "c5dc3255effd3a20fa68a984bb0c11b4c93a6e9eff67a45855395a1b17649c3a"
   }
 }

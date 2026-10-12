@@ -2,18 +2,17 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, win32 } from 'node:path';
 import { createInterface } from 'node:readline';
 import { login, service, systemStore } from '../dist/auth.js';
 import { WINDOWS_SCRIPT } from '../dist/windows-credentials.js';
-import { hookScript, LOCK_SCRIPT } from './windows-acceptance-hooks.mjs';
+import { hookScript, referenceScript, LOCK_SCRIPT } from './windows-acceptance-hooks.mjs';
 
 export const CASES = ['interop', 'failure', 'collision', 'conflict', 'delete', 'races', 'concurrent', 'lock'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const self = fileURLToPath(import.meta.url);
-const pythonHelper = fileURLToPath(new URL('./windows-acceptance-python.py', import.meta.url));
 export function scope(runId, id) {
   if (!UUID.test(runId) || !CASES.includes(id)) throw new Error('INVALID_SCOPE');
   const base = 'https://windows-credential-check.example.invalid/' + runId + '/' + id;
@@ -72,60 +71,60 @@ export async function runSuite(runId, ops, notify = () => {}) {
   };
   try {
     await ops.probe();
-    for (const id of CASES) { await ops.py(id, 'empty'); claimed.add(id); }
+    for (const id of CASES) { await ops.reference(id, 'empty'); claimed.add(id); }
     const raw = v => JSON.stringify(fixture(runId, v));
     const read = async (id, v) => assert.deepEqual(await ops.read(id), v === null ? null : fixture(runId, v));
-    await test('interop', 'real_wincred_python_ts', async () => {
-      await ops.py('interop', 'save', { variant: 'A' }); await read('interop', 'A');
-      await ops.write('interop', raw('B')); await ops.py('interop', 'read', { variant: 'B' });
-      await ops.py('interop', 'save', { variant: 'A' }); await read('interop', 'A');
-      await ops.py('interop', 'delete'); await read('interop', null);
+    await test('interop', 'real_wincred_raw_api_ts', async () => {
+      await ops.reference('interop', 'save', { variant: 'A' }); await read('interop', 'A');
+      await ops.write('interop', raw('B')); await ops.reference('interop', 'read', { variant: 'B' });
+      await ops.reference('interop', 'save', { variant: 'A' }); await read('interop', 'A');
+      await ops.reference('interop', 'delete'); await read('interop', null);
     });
     await test('failure', 'real_store_and_controlled_fault', async () => {
-      await ops.py('failure', 'save', { variant: 'A' });
+      await ops.reference('failure', 'save', { variant: 'A' });
       await rejected(() => ops.identityRejected('failure', fixture(runId, 'B'))); await read('failure', 'A');
       await rejected(() => ops.write('failure', JSON.stringify({ ...fixture(runId, 'B'), password: 'x'.repeat(3000) })));
       await read('failure', 'A');
-      nativeFailure = (await ops.py('failure', 'native_failure')).native_api_failure === true;
+      nativeFailure = (await ops.reference('failure', 'native_failure')).native_api_failure === true;
       await read('failure', 'A');
       const result = await ops.hook('failure', { action: 'write', fault: 'fail-write', trigger_slot: 0, variant: 'B' });
       assert.equal(result.ok, false); assert.equal(result.hits, 1); await read('failure', 'A');
     });
     await test('collision', 'real_wincred', async () => {
-      await ops.py('collision', 'seed', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
-      await ops.py('collision', 'seed', { slot: 1, account: 'own', variant: 'A' });
+      await ops.reference('collision', 'seed', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
+      await ops.reference('collision', 'seed', { slot: 1, account: 'own', variant: 'A' });
       await read('collision', 'A'); await ops.write('collision', raw('B'));
-      await ops.py('collision', 'slot', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
-      await ops.py('collision', 'slot', { slot: 1, account: 'own', variant: 'B' });
+      await ops.reference('collision', 'slot', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
+      await ops.reference('collision', 'slot', { slot: 1, account: 'own', variant: 'B' });
       await ops.delete('collision'); await read('collision', null);
-      await ops.py('collision', 'slot', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
+      await ops.reference('collision', 'slot', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
     });
     await test('conflict', 'real_wincred', async () => {
-      for (const [slot, variant] of [[0, 'foreign-a'], [1, 'foreign-b']]) await ops.py('conflict', 'seed', { slot, account: variant, variant });
+      for (const [slot, variant] of [[0, 'foreign-a'], [1, 'foreign-b']]) await ops.reference('conflict', 'seed', { slot, account: variant, variant });
       await rejected(() => ops.write('conflict', raw('A'))); assert.equal(await ops.delete('conflict'), false);
-      for (const [slot, variant] of [[0, 'foreign-a'], [1, 'foreign-b']]) await ops.py('conflict', 'slot', { slot, account: variant, variant });
+      for (const [slot, variant] of [[0, 'foreign-a'], [1, 'foreign-b']]) await ops.reference('conflict', 'slot', { slot, account: variant, variant });
     });
     await test('delete', 'real_store_and_controlled_fault', async () => {
-      await ops.py('delete', 'seed', { slot: 0, account: 'own', variant: 'B' });
-      await ops.py('delete', 'seed', { slot: 1, account: 'own', variant: 'A' });
+      await ops.reference('delete', 'seed', { slot: 0, account: 'own', variant: 'B' });
+      await ops.reference('delete', 'seed', { slot: 1, account: 'own', variant: 'A' });
       for (const slot of [1, 0]) {
         const result = await ops.hook('delete', { action: 'delete', fault: 'fail-delete', trigger_slot: slot });
         assert.equal(result.ok, false); assert.equal(result.hits, 1); await read('delete', 'B');
-        await ops.py('delete', 'slot', { slot: 1, account: 'own', variant: slot === 1 ? 'A' : null });
+        await ops.reference('delete', 'slot', { slot: 1, account: 'own', variant: slot === 1 ? 'A' : null });
       }
       await ops.delete('delete'); await read('delete', null); assert.equal(await ops.delete('delete'), false);
     });
     await test('races', 'real_store_and_controlled_race', async () => {
-      await ops.py('races', 'save', { variant: 'A' });
+      await ops.reference('races', 'save', { variant: 'A' });
       let result = await ops.hook('races', { action: 'write', variant: 'A', fault: 'race-read', trigger_slot: 0,
         race_slot: 0, race_account: 'own', race_variant: 'B' });
       assert.equal(result.ok, false); assert.equal(result.hits, 1); await read('races', 'B');
-      await ops.py('races', 'seed', { slot: 1, account: 'own', variant: 'A' });
+      await ops.reference('races', 'seed', { slot: 1, account: 'own', variant: 'A' });
       result = await ops.hook('races', { action: 'delete', fault: 'race-delete', trigger_slot: 1,
         race_slot: 0, race_account: 'foreign-a', race_variant: 'foreign-a' });
       assert.equal(result.ok, false); assert.equal(result.hits, 1);
-      await ops.py('races', 'slot', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
-      await ops.py('races', 'cleanup'); await ops.py('races', 'save', { variant: 'A' });
+      await ops.reference('races', 'slot', { slot: 0, account: 'foreign-a', variant: 'foreign-a' });
+      await ops.reference('races', 'cleanup'); await ops.reference('races', 'save', { variant: 'A' });
       result = await ops.hook('races', { action: 'delete', fault: 'race-delete', trigger_slot: 0,
         race_slot: 1, race_account: 'own', race_variant: 'B' });
       assert.equal(result.ok, false); assert.equal(result.hits, 1); await read('races', 'B');
@@ -137,7 +136,7 @@ export async function runSuite(runId, ops, notify = () => {}) {
     // Workers must be stopped before cleanup; the live concurrent adapter awaits every worker.
     for (const id of CASES) {
       if (!claimed.has(id)) { cleanup.push({ id, status: 'not_claimed' }); continue; }
-      try { await ops.py(id, 'cleanup'); cleanup.push({ id, status: 'passed' }); }
+      try { await ops.reference(id, 'cleanup'); cleanup.push({ id, status: 'passed' }); }
       catch (error) { cleanup.push({ id, status: 'failed', code: safeCode(error) }); }
     }
   }
@@ -198,11 +197,28 @@ async function lockProbe(runId, action) {
   return { done };
 }
 
-function liveOps(runId, python) {
-  const py = (id, mode, extra = {}) => command(python, ['-B', pythonHelper], { run_id: runId, case: id, mode, ...extra });
+export function liveOps(runId, runCommand = command, executable = powershell()) {
+  const reference = async (id, mode, extra = {}) => {
+    const { service: svc } = scope(runId, id);
+    const variants = ['A', 'B', 'foreign-a', 'foreign-b'];
+    const encode = variant => Buffer.from(JSON.stringify(fixture(runId, variant)), 'utf16le').toString('base64');
+    const users = { own: 'confluence-credentials', 'foreign-a': 'acceptance-foreign-' + runId + '-a',
+      'foreign-b': 'acceptance-foreign-' + runId + '-b' };
+    if (mode === 'save') { mode = 'seed'; extra = { ...extra, slot: 0, account: 'own' }; }
+    if (mode === 'read') {
+      mode = 'slot'; extra = { ...extra, slot: 0, account: 'own' };
+    }
+    if (mode === 'delete') mode = 'cleanup';
+    if (extra.slot !== undefined && ![0, 1].includes(extra.slot)) throw new Error('INVALID_SCOPE');
+    if (extra.account !== undefined && !Object.hasOwn(users, extra.account)) throw new Error('INVALID_SCOPE');
+    const result = await runCommand(executable, psArgs(referenceScript()), {
+      service: svc, mode, users: Object.values(users), records: variants.map(encode), slot: extra.slot,
+      user: users[extra.account], record: extra.variant == null ? null : encode(extra.variant) });
+    return mode === 'native_failure' ? { ...result, native_api_failure: true } : result;
+  };
   const store = id => systemStore(scope(runId, id).base);
   return {
-    probe: () => command(python, ['-B', pythonHelper], { mode: 'probe' }), py,
+    probe: () => reference('lock', 'empty'), reference,
     async read(id) { const raw = await (await store(id)).getPassword(); return raw === null ? null : JSON.parse(raw); },
     async write(id, raw) { await (await store(id)).setPassword(raw); },
     async delete(id) { return (await store(id)).deletePassword(); },
@@ -244,7 +260,7 @@ export function options(argv) {
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
     if (key === '--worker' || key === '--help') value[key.slice(2)] = true;
-    else if (['--python', '--report', '--cleanup', '--hold-lock', '--probe-lock'].includes(key) && argv[i + 1] && !argv[i + 1].startsWith('--')) value[key.slice(2)] = argv[++i];
+    else if (['--report', '--cleanup', '--hold-lock', '--probe-lock'].includes(key) && argv[i + 1] && !argv[i + 1].startsWith('--')) value[key.slice(2)] = argv[++i];
     else throw new Error('INVALID_ARGUMENT');
   }
   if ([value.cleanup, value['hold-lock'], value['probe-lock'], value.worker].filter(Boolean).length > 1) throw new Error('INVALID_ARGUMENT');
@@ -252,9 +268,10 @@ export function options(argv) {
 }
 export async function main(argv = process.argv.slice(2)) {
   const args = options(argv);
-  if (args.help) { process.stdout.write('node scripts/windows-acceptance.mjs --python EXISTING_PYTHON_EXE [--report NEW_JSON]\n--cleanup RUN_UUID; --hold-lock RUN_UUID; --probe-lock RUN_UUID\n'); return; }
+  if (args.help) { process.stdout.write('node scripts/windows-acceptance.mjs [--report NEW_JSON]\n--cleanup RUN_UUID; --hold-lock RUN_UUID; --probe-lock RUN_UUID\n'); return; }
   if (process.platform !== 'win32') throw new Error('WINDOWS_REQUIRED');
-  if (!/^v22\./u.test(process.version) || process.versions.node.localeCompare('22.23.2', undefined, { numeric: true }) < 0) throw new Error('NODE_VERSION_REQUIRED');
+  const [major, minor] = process.versions.node.split('.').map(Number);
+  if (major < 22 || major === 22 && minor < 12) throw new Error('NODE_VERSION_REQUIRED');
   if (args.worker) {
     let input = ''; for await (const data of process.stdin) input += data; const request = JSON.parse(input);
     if (request.case !== 'concurrent') throw new Error('INVALID_SCOPE');
@@ -279,25 +296,18 @@ export async function main(argv = process.argv.slice(2)) {
     process.stdout.write(JSON.stringify({ mode: 'lock_probe', run_id: runId, elapsed_ms: result.elapsed_ms,
       status: 'requires_two_session_comparison' }) + '\n'); return;
   }
-  const python = resolve(args.python || fileURLToPath(new URL('../../native/.venv/Scripts/python.exe', import.meta.url)));
   let report;
   if (args.cleanup) {
     const cleanup = [];
     for (const id of CASES) {
-      try { await liveOps(runId, python).py(id, 'cleanup'); cleanup.push({ id, status: 'passed' }); }
+      try { await liveOps(runId).reference(id, 'cleanup'); cleanup.push({ id, status: 'passed' }); }
       catch (error) { cleanup.push({ id, status: 'failed', code: safeCode(error) }); }
     }
     report = { schema: 1, run_id: runId, mode: 'cleanup', cleanup,
       status: cleanup.some(r => r.status === 'failed') ? 'failed' : 'passed' };
   } else {
-    // Validate the declared Python baseline without running installers or importing a personal configuration.
-    const baseline = JSON.parse(readFileSync(new URL('../baseline/python-0.14.0.json', import.meta.url), 'utf8'));
-    const { createHash } = await import('node:crypto');
-    for (const [path, expected] of Object.entries(baseline.files)) {
-      if (createHash('sha256').update(readFileSync(new URL('../../native/' + path, import.meta.url))).digest('hex') !== expected) throw new Error('PYTHON_BASELINE_CHANGED');
-    }
     process.stdout.write(JSON.stringify({ event: 'started', run_id: runId }) + '\n');
-    report = await runSuite(runId, liveOps(runId, python), result => process.stdout.write(JSON.stringify(result) + '\n'));
+    report = await runSuite(runId, liveOps(runId), result => process.stdout.write(JSON.stringify(result) + '\n'));
   }
   if (args.report) writeFileSync(resolve(args.report), JSON.stringify(report, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
   process.stdout.write(JSON.stringify(report) + '\n');
