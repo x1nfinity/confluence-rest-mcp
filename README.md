@@ -24,27 +24,34 @@
 
 ## 快速开始
 
+默认命令使用 `confluence-rest-mcp@latest`，跟随 npm 的正式发布标签。客户端重新启动 MCP 进程时解析版本，已运行的进程不会自动热更新。
+
 ### 1. 登录并验证
 
 在 macOS 或 Windows 的本人交互终端执行，替换示例站点地址：
 
 ```sh
-npx -y confluence-rest-mcp@1.0.1 login --base-url https://confluence.example.com/confluence
-npx -y confluence-rest-mcp@1.0.1 whoami --base-url https://confluence.example.com/confluence
+npx -y confluence-rest-mcp@latest login --base-url https://confluence.example.com/confluence
+npx -y confluence-rest-mcp@latest whoami --base-url https://confluence.example.com/confluence
 ```
 
 `login` 隐藏输入账号和密码，验证成功后保存到系统凭据库。密码更新后重新运行相同命令。账号密码不放入命令参数或客户端配置；Linux／无系统凭据库环境使用[环境变量认证](#环境变量认证)。
 
 ### 2. 配置 MCP 客户端
 
-将下面的 `confluence` 条目合并到客户端配置，保留已有服务、批准、禁用和超时设置：
+选择所用客户端的接入方式，替换示例站点地址；登录终端与 MCP 进程应运行在同一系统、同一用户身份下。合并服务条目时保留已有服务、批准、禁用和超时设置。
+
+#### Cursor／Claude Desktop
+
+使用以下 JSON：
 
 ```json
 {
   "mcpServers": {
     "confluence": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "confluence-rest-mcp@1.0.1"],
+      "args": ["-y", "confluence-rest-mcp@latest"],
       "env": {
         "CONFLUENCE_BASE_URL": "https://confluence.example.com/confluence",
         "CONFLUENCE_AUTH_MODE": "basic",
@@ -56,12 +63,27 @@ npx -y confluence-rest-mcp@1.0.1 whoami --base-url https://confluence.example.co
 }
 ```
 
-以上适用于采用 `mcpServers` 结构的客户端。Codex 使用对应 TOML：
+- **Cursor**：合并到用户级 `~/.cursor/mcp.json` 或项目级 `.cursor/mcp.json`。[官方接入说明](https://cursor.com/docs/mcp)。
+- **Claude Desktop**：从 **Settings → Developer → Edit Config** 打开实际配置文件并合并。[本地服务接入说明](https://modelcontextprotocol.io/docs/develop/connect-local-servers)。
+
+#### Claude Code
+
+在终端执行用户级配置命令（整行执行）：
+
+```sh
+claude mcp add --transport stdio --scope user confluence --env CONFLUENCE_BASE_URL=https://confluence.example.com/confluence --env CONFLUENCE_AUTH_MODE=basic --env CONFLUENCE_CREDENTIAL_SOURCE=keyring --env CONFLUENCE_READ_ONLY=true -- npx -y confluence-rest-mcp@latest
+```
+
+通过 `claude mcp get confluence` 或会话内 `/mcp` 检查连接。[官方接入说明](https://code.claude.com/docs/en/mcp)。
+
+#### Codex
+
+在 `~/.codex/config.toml` 合并对应 TOML：
 
 ```toml
 [mcp_servers.confluence]
 command = "npx"
-args = ["-y", "confluence-rest-mcp@1.0.1"]
+args = ["-y", "confluence-rest-mcp@latest"]
 
 [mcp_servers.confluence.env]
 CONFLUENCE_BASE_URL = "https://confluence.example.com/confluence"
@@ -70,14 +92,35 @@ CONFLUENCE_CREDENTIAL_SOURCE = "keyring"
 CONFLUENCE_READ_ONLY = "true"
 ```
 
-客户端的配置位置和启动命令解析方式以其说明为准。服务默认运行 stdio，无需另开 HTTP 端口。
+通过 `codex mcp list` 核对注册，重载后在新会话确认连接。[官方接入说明](https://developers.openai.com/codex/mcp)。
 
-### 3. 重载并使用
+OpenCode 使用 `type="local"`、命令数组和 `environment` 字段，接入方式见[官方说明](https://opencode.ai/docs/mcp-servers/)。服务默认运行 stdio，无需另开 HTTP 端口。
 
-重载客户端，在新会话确认 `confluence` 的工具可见。例如：
+#### Windows 启动说明
+
+客户端无法直接启动 `npx` 时，可使用 `cmd.exe` 包装。下面展示 JSON 的 `command` 和 `args` 字段；TOML 配置修改同名字段，保留原有 `env`：
+
+```json
+{
+  "command": "cmd.exe",
+  "args": ["/d", "/s", "/c", "npx -y confluence-rest-mcp@latest"]
+}
+```
+
+先在 PowerShell 用 `Get-Command node` 和 `Get-Command npx.cmd` 核对可执行路径；桌面客户端与终端可能使用不同 PATH。凭据库认证另需系统 Windows PowerShell 5.1；WSL 按 Linux 使用环境变量认证。
+
+### 3. 重载并验收
+
+保存配置并重载客户端，在新会话提供本人有权限访问的真实页面链接，让 AI 实际调用 `get_page`：
+
+```text
+使用 Confluence MCP 读取这个页面：<完整页面链接>。
+读完所有正文分页，概括内容，并注明页面链接、版本和更新时间。
+```
+
+页面读取成功才证明客户端、身份和页面权限链路可用；看到工具清单仅证明发现成功。然后可继续尝试：
 
 - “在 DEMO 空间搜索包含‘备考计划’的文档，并列出标题和链接。”
-- “读取这个 Confluence 页面，按章节概括，并注明页面版本与更新时间。”
 - “比较页面的第 3 版和第 4 版，说明 storage 正文的变化。”
 
 完整正文按 `content.next_offset` 续读，使用返回的数字页面 ID，固定 `expected_version` 和 `expected_content_hash`；列表按 `pagination.next_start` 续读。结构分段须拼接全部 text 后一次解析 JSON，完整性结合 `coverage`、`warnings` 和未解析宏判断。页面中的附件引用需要另行读取，不能当作附件内容已经检查。
@@ -123,36 +166,9 @@ CONFLUENCE_READ_ONLY = "true"
 
 个人状态目录为 macOS／Linux 的 `~/.confluence-mcp/.local/`，或 Windows 的 `%LOCALAPPDATA%\ConfluenceMCP\.local\`。密码使用系统凭据库或显式环境变量提供。
 
-在该目录创建 `policy.json` 可以限制工具和写空间。例如，仅开放读取工具：
+首次只读接入无需创建个人配置文件。需要限制工具或开启受控写入时，按[工具与写空间策略](docs/CONFIGURATION.md#工具与写空间策略)配置；该文档集中提供 `auth.json`、`policy.json` 示例和完整操作步骤。
 
-```json
-{
-  "enabled_tools": ["search_pages", "get_page", "get_attachments"],
-  "write_spaces": []
-}
-```
-
-实际写入须同时满足 Basic 认证、本机 `auth.json` 的 `allow_write=true`、进程未强制只读、工具已启用、实际目标空间在非空白名单内，以及 Confluence 本人权限。先查看预览并授权具体目标和内容，再携带 `preview_hash` 提交。受控写入需要在个人状态目录配置：
-
-`auth.json`：
-
-```json
-{
-  "mode": "basic",
-  "allow_write": true
-}
-```
-
-`policy.json`：
-
-```json
-{
-  "enabled_tools": ["get_page", "update_page"],
-  "write_spaces": ["TEAM_DOCS"]
-}
-```
-
-将客户端的 `CONFLUENCE_READ_ONLY` 改为 `false` 后重载，先预览，再授权具体目标及内容。随包的 `docs/CONFIGURATION.md` 提供完整配置和失败处理。
+真实写入须同时满足 Basic 身份、本机写开关、进程未强制只读、工具已启用、实际空间在非空白名单内及本人权限。先审查完整预览并授权具体目标和内容，再携带 `preview_hash` 提交；仅设置 `CONFLUENCE_READ_ONLY=false` 不能独立启用写入。
 
 ### 环境变量认证
 
@@ -170,9 +186,9 @@ CONFLUENCE_READ_ONLY = "true"
 ## 诊断与故障排查
 
 ```sh
-npx -y confluence-rest-mcp@1.0.1 version
-npx -y confluence-rest-mcp@1.0.1 doctor --base-url https://confluence.example.com/confluence --check --json
-npx -y confluence-rest-mcp@1.0.1 doctor --base-url https://confluence.example.com/confluence --page 123 --json
+npx -y confluence-rest-mcp@latest version
+npx -y confluence-rest-mcp@latest doctor --base-url https://confluence.example.com/confluence --check --json
+npx -y confluence-rest-mcp@latest doctor --base-url https://confluence.example.com/confluence --page 123 --json
 ```
 
 `doctor --check` 仅检查配置，不读取凭据或访问网络；普通 `doctor` 和 `whoami` 检查真实身份，`--page` 另查页面访问。退出码非零表示诊断失败。随包的 `docs/CONFIGURATION.md` 提供认证和平台故障排查。
@@ -185,7 +201,16 @@ npx -y confluence-rest-mcp@1.0.1 doctor --base-url https://confluence.example.co
 
 ## 升级与开发
 
-正式版本发布到 npm `latest`，预发布版本使用 `next`。客户端建议固定具体版本；升级或回退时调整包版本并重载，保留个人状态、凭据和客户端策略。
+正式版本发布到 npm `latest`，预发布版本使用 `next`。默认配置使用 `@latest`，npx 在启动时解析标签，需要时下载对应版本，并复用已下载的包。升级后执行 `version` 和 `doctor --check`，重启 MCP 进程并验收页面读取。
+
+需要复现问题或回退时，将终端命令和客户端配置中的 `confluence-rest-mcp@latest` 一并改为已确认的具体版本，例如 `confluence-rest-mcp@1.0.1`：
+
+```sh
+npx -y confluence-rest-mcp@1.0.1 version
+npx -y confluence-rest-mcp@1.0.1 doctor --base-url https://confluence.example.com/confluence --check --json
+```
+
+重启 MCP 进程并重新验收；恢复跟随正式发布时改回 `@latest`。保留个人状态、凭据和客户端策略。
 
 源码开发使用 Node.js 22.23.2、npm 10.9.8、TypeScript 5.9.3，在仓库根目录执行：
 
